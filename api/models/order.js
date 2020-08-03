@@ -26,7 +26,6 @@ const orderSchema = mongoose.Schema({
       type: String,
       required: true,
     },
-    houseNumber: String,
   },
   tel: {
     type: String,
