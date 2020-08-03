@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const apiError = require("../error-handler/apiErrors");
 const sha256 = require("js-sha256").sha256;
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   const body = req.body;
   if (!validateEmail(body.email)) {
     next(apiError.badRequest("Enter valid email"));
@@ -34,7 +34,7 @@ router.post("/", async (req, res) => {
           lastname: new_user.lastname,
           email: new_user.email,
         },
-        process.env.ACCESS_TOKEN_SECERET
+        process.env.JWT_ACCESS_TOKEN_SECERET
       );
       res.status(201).json({
         user: {
