@@ -11,6 +11,10 @@ router.post("/", async (req, res) => {
     next(apiError.badRequest("Enter valid email"));
     return;
   }
+  if (!validatePassword(body.password)) {
+    next(apiError.badRequest("Enter strong password"));
+    return;
+  }
   try {
     const userFound = await User.findOne({ email: body.email }); // query to check if user with email already exist
     if (!userFound) {
@@ -52,8 +56,16 @@ router.post("/", async (req, res) => {
 });
 
 function validateEmail(email) {
-  const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return re.test(email);
+  const emailRegEx = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return emailRegEx.test(email);
+}
+function validatePassword(password) {
+  var passwordRegEx = /(?=^.{12,}$)(?=.*\d)(?=.*[!@#$%^&*]+)(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
+  return passwordRegEx.test(password);
+  // at least 1 uppercase letter
+  // at least 1 special character
+  // at least 1 number
+  // at least 12 character
 }
 
 module.exports = router;
