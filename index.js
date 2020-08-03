@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+require("dotenv").config();
+const port = process.env.PORT || 3000;
 const productRoutes = require("./api/routes/product");
 const orderRoutes = require("./api/routes/order");
 const cartRoutes = require("./api/routes/cart");
@@ -9,8 +11,6 @@ const signUpRoutes = require("./api/routes/signUp");
 const loginRoutes = require("./api/routes/login");
 const apiErrorHandler = require("./api/error-handler/apiErrorHandler");
 const apiError = require("./api/error-handler/apiErrors");
-const port = process.env.PORT || 3000;
-require("dotenv").config();
 
 mongoose.connect(
   `mongodb+srv://<username>:${process.env.MONGO_DB_PASSWORD}@cluster0.z5kcq.mongodb.net/shop?retryWrites=true&w=majority`,
