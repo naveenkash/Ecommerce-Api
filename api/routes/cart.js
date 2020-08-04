@@ -8,7 +8,7 @@ const mongoose = require("mongoose");
 const apiError = require("../error-handler/apiErrors");
 const authenticateUser = require("../middlewares/authenticateUser");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
+const randomId = require("../helper-methods/randomId");
 /**
  * @param {user_id string}
  */
@@ -294,7 +294,7 @@ router.post(
           },
         },
         {
-          idempotencyKey: require("crypto").randomBytes(16).toString("hex"),
+          idempotencyKey: randomId(),
         }
       );
 

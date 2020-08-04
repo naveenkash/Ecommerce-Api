@@ -20,7 +20,6 @@ function authenticateUser(req, res, next) {
         return;
       }
       req.body.user_id = decodedToken.user_id;
-      req.body.admin = decodedToken;
       next();
     }
   );
