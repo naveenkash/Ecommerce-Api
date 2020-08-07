@@ -13,7 +13,7 @@ const apiErrorHandler = require("./api/error-handler/apiErrorHandler");
 const apiError = require("./api/error-handler/apiErrors");
 
 mongoose.connect(
-  `mongodb+srv://<username>:${process.env.MONGO_DB_PASSWORD}@cluster0.z5kcq.mongodb.net/shop?retryWrites=true&w=majority`,
+  `${process.env.MONGO_URI}`,
   { useNewUrlParser: true, useUnifiedTopology: true },
   () => {
     console.log("connected to db");
