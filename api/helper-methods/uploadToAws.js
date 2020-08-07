@@ -10,7 +10,7 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
-async function uploadToAWS(file) {
+async function uploadToAWS(folderName, file) {
   // Read content from the file
   try {
     const fileData = await new Promise((resolve, reject) => {
@@ -19,24 +19,6 @@ async function uploadToAWS(file) {
       });
     });
 
-    let months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    let d = new Date();
-    let folderName = `${d.getDate()}-${
-      months[d.getMonth()]
-    }-${d.getFullYear()}`;
     // Setting up S3 upload parameters
     const params = {
       Bucket: BUCKET,

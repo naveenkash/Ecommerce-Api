@@ -6,6 +6,7 @@ const apiError = require("../error-handler/apiErrors");
 const sha256 = require("js-sha256").sha256;
 const formidable = require("formidable");
 const uploadToAWS = require("../helper-methods/uploadToAws");
+const checkFileType = require("../helper-methods/checkFileType.js");
 
 /**
  * @param {formData}
@@ -17,20 +18,18 @@ const uploadToAWS = require("../helper-methods/uploadToAws");
  */
 router.post("/", async (req, res, next) => {
   const form = new formidable.IncomingForm({ multiples: false });
-  try {
-    form.parse(req, async (error, fields, files) => {
+  form.parse(req, async (error, fields, files) => {
+    try {
       if (error) {
         next(apiError.interServerError(error.message));
         return;
       }
-      if (files.file && files.file.length > 1) {
-        next(
-          apiError.interServerError(
-            "Only 1 image is allowed for profile picture"
-          )
-        );
+
+      if (files.file && !checkFileType.isFileValid(files.file)) {
+        next(apiError.badRequest("File type not supported"));
         return;
       }
+
       if (!validateEmail(fields.email)) {
         next(apiError.badRequest("Enter valid email"));
         return;
@@ -43,7 +42,7 @@ router.post("/", async (req, res, next) => {
       if (!userFound) {
         let img;
         if (files.file) {
-          img = await uploadToAWS(files.file);
+          img = await uploadToAWS("user-images", files.file);
         }
         const user = new User({
           _id: mongoose.Types.ObjectId(),
@@ -79,11 +78,11 @@ router.post("/", async (req, res, next) => {
         next(apiError.badRequest("User already exist with that email"));
         return;
       }
-    });
-  } catch (error) {
-    next(apiError.interServerError(error.message));
-    return;
-  }
+    } catch (error) {
+      next(apiError.interServerError(error.message));
+      return;
+    }
+  });
 });
 
 function validateEmail(email) {

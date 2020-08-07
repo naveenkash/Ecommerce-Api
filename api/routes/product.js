@@ -7,6 +7,8 @@ const apiError = require("../error-handler/apiErrors");
 const authenticateUser = require("../middlewares/authenticateUser");
 const formidable = require("formidable");
 const uploadToAWS = require("../helper-methods/uploadToAws.js");
+const getTodayDate = require("../helper-methods/getTodayDate.js");
+const checkFileType = require("../helper-methods/checkFileType.js");
 
 // must be admin to add update delete product
 router.get("/", async (req, res, next) => {
@@ -67,31 +69,30 @@ router.post("/new", authenticateUser, checkIfAdmin, async (req, res, next) => {
         next(apiError.interServerError(error.message));
         return;
       }
-      if (files.files.length > 10) {
-        next(
-          apiError.interServerError("Only 10 images per product is allowed")
-        );
-        return;
-      }
-      let allFilesValid = true;
-      files.files.forEach((file) => {
-        if (file == null || !fileFilter(file) || file.size <= 0) {
-          allFilesValid = false;
-        }
-      });
-      if (!allFilesValid) {
+      if (!files.files || files.files.length > 10) {
         next(
           apiError.interServerError(
-            "Provide atleast 1 file or must be a supported file type or file size must be bigger than 0"
+            "Provide atleast 1 image or Only 10 images per product is allowed"
           )
         );
         return;
       }
+      if (!checkFileType.areFilesValid(files.files)) {
+        next(apiError.badRequest("Files not Valid"));
+        return;
+      }
 
-      for (let i = 0; i < files.files.length; i++) {
-        const file = files.files[i];
-        const res = await uploadToAWS(file);
+      if (!Array.isArray(files.files)) {
+        let folderName = `product-images/${getTodayDate()}`;
+        const res = await uploadToAWS(folderName, files.files);
         images.push({ location: res.Location });
+      } else {
+        for (let i = 0; i < files.files.length; i++) {
+          const file = files.files[i];
+          let folderName = `product-images/${getTodayDate()}`;
+          const res = await uploadToAWS(folderName, file);
+          images.push({ location: res.Location });
+        }
       }
 
       const product = new Products({
@@ -174,14 +175,6 @@ async function checkIfAdmin(req, res, next) {
     return;
   }
   next();
-}
-
-function fileFilter(file) {
-  const allowedTypes = ["image/jpg", "image/jpeg", "image/png"];
-  if (!allowedTypes.includes(file.type)) {
-    return false;
-  }
-  return true;
 }
 
 module.exports = router;
