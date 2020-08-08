@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 require("dotenv").config();
 const port = process.env.PORT || 3000;
 const productRoutes = require("./api/routes/product");
-const feedbackRoutes = require("./api/routes/feedbackRoutes");
+const feedbackRoutes = require("./api/routes/feedback");
 const orderRoutes = require("./api/routes/order");
 const cartRoutes = require("./api/routes/cart");
 const signUpRoutes = require("./api/routes/signUp");
