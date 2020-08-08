@@ -26,7 +26,7 @@ router.post(
       }
 
       product.total_stars += feedback
-        ? convertToInt(body.stars - feedback.stars)
+        ? convertToInt(body.stars) - feedback.stars
         : convertToInt(body.stars);
       product.total_reviews += feedback ? 0 : 1;
       product.average_review = (
