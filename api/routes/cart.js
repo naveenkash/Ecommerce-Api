@@ -69,6 +69,7 @@ router.post("/add", authenticateUser, async (req, res, next) => {
           _id: mongoose.Types.ObjectId(),
           cart_id: user.cart_id,
           product_id: product._id,
+          user_id: body.user_id,
           quantity: body.quantity || 1,
           price: product.price,
           name: product.name,
@@ -101,12 +102,13 @@ router.post("/add", authenticateUser, async (req, res, next) => {
           {
             cart_id: newCreatedCart._id,
           },
-          { useFindAndModify: true }
+          { useFindAndModify: false }
         );
         const newCartItem = new CartItems({
           _id: mongoose.Types.ObjectId(),
           cart_id: newCreatedCart._id,
           product_id: product._id,
+          user_id: body.user_id,
           quantity: body.quantity || 1,
           price: product.price,
           name: product.name,

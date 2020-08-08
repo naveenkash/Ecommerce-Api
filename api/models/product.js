@@ -30,6 +30,18 @@ const productSchema = mongoose.Schema({
       },
     },
   ],
+  average_review: {
+    type: Number,
+    default: 0,
+  },
+  total_stars: {
+    type: Number,
+    default: 0,
+  },
+  total_reviews: {
+    type: Number,
+    default: 0,
+  },
 });
 
 module.exports = mongoose.model("Product", productSchema);

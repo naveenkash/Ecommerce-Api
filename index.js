@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 require("dotenv").config();
 const port = process.env.PORT || 3000;
 const productRoutes = require("./api/routes/product");
+const feedbackRoutes = require("./api/routes/feedbackRoutes");
 const orderRoutes = require("./api/routes/order");
 const cartRoutes = require("./api/routes/cart");
 const signUpRoutes = require("./api/routes/signUp");
@@ -36,6 +37,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.use("/product", productRoutes);
+app.use("/product/feedback", feedbackRoutes);
 app.use("/order", orderRoutes);
 app.use("/cart", cartRoutes);
 app.use("/auth/account/signup", signUpRoutes);

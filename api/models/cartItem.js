@@ -29,6 +29,10 @@ const cartItemSchema = mongoose.Schema({
     type: Boolean,
     required: true,
   },
+  user_id: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("cartItem", cartItemSchema);
