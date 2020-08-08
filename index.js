@@ -38,8 +38,8 @@ app.use(bodyParser.json());
 app.use("/product", productRoutes);
 app.use("/order", orderRoutes);
 app.use("/cart", cartRoutes);
-app.use("/signup", signUpRoutes);
-app.use("/login", loginRoutes);
+app.use("/auth/account/signup", signUpRoutes);
+app.use("/auth/account/login", loginRoutes);
 
 app.use((req, res, next) => {
   next(apiError.notFound("Route not Found"));

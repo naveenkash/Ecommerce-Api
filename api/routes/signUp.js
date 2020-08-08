@@ -16,7 +16,7 @@ const checkFileType = require("../helper-methods/checkFileType.js");
  * @param {formData email}
  * @param {formData image file->key file->value}
  */
-router.post("/", async (req, res, next) => {
+router.post("/local", async (req, res, next) => {
   const form = new formidable.IncomingForm({ multiples: false });
   form.parse(req, async (error, fields, files) => {
     try {
@@ -48,9 +48,11 @@ router.post("/", async (req, res, next) => {
           _id: mongoose.Types.ObjectId(),
           name: fields.name,
           lastname: fields.lastname,
+          display_name: `${fields.name} ${fields.lastname}`,
           email: fields.email,
-          password: sha256(fields.password),
+          password: sha256(fields.password.trim()),
           img: img != null ? img.Location : process.env.DEFAULT_IMG,
+          created_at: Date.now(),
         });
 
         const new_user = await user.save();
@@ -61,6 +63,8 @@ router.post("/", async (req, res, next) => {
             lastname: new_user.lastname,
             email: new_user.email,
             img: new_user.img,
+            created_at: new_user.created_at,
+            display_name: new_user.display_name,
           },
           process.env.JWT_ACCESS_TOKEN_SECERET
         );
@@ -71,6 +75,8 @@ router.post("/", async (req, res, next) => {
             lastname: new_user.lastname,
             email: new_user.email,
             img: new_user.img,
+            created_at: new_user.created_at,
+            display_name: new_user.display_name,
           },
           token,
         });

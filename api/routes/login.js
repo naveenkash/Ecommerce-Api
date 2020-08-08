@@ -3,11 +3,11 @@ const Users = require("../models/user");
 const apiError = require("../error-handler/apiErrors");
 const sha256 = require("js-sha256").sha256;
 
-router.get("/", async (req, res, next) => {
+router.get("/local", async (req, res, next) => {
   const body = req.body;
-  const typedPassword = sha256(body.password);
+  const typedPassword = sha256(body.password.trim());
   try {
-    const user = Users.findOne({ email: body.email });
+    const user = await Users.findOne({ email: body.email });
     if (user) {
       const savedPassword = user.password;
       if (typedPassword == savedPassword) {
@@ -16,6 +16,9 @@ router.get("/", async (req, res, next) => {
           name: user.name,
           lastname: user.lastname,
           email: user.email,
+          created_at: user.created_at,
+          display_name: user.display_name,
+          img: user.img,
         };
         res.status(200).json({
           user: userObj,
