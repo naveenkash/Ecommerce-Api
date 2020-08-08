@@ -43,6 +43,7 @@ router.get("/", authenticateUser, async (req, res, next) => {
 /**
  * @param {product_id string}
  * @param {user_id string}
+ * @param {quantity number} optional default 1
  */
 router.post("/add", authenticateUser, async (req, res, next) => {
   const body = req.body;
@@ -240,8 +241,11 @@ router.post(
       const cartItems = await CartItems.find({ cart_id: user.cart_id });
       for (let i = 0; i < cartItems.length; i++) {
         const cartItem = cartItems[i];
-        const product = await Products.findById(cartItem.product_id);
-        if (product.quantity - cartItem.quantity < 0) {
+        const product = await Products.findById(cartItem.product_id).session(
+          session
+        );
+        product.quantity = product.quantity - cartItem.quantity;
+        if (product.quantity < 0) {
           // if product quantity is less than 0 after reducing the cart item quantity
           next(
             apiError.interServerError("Product is not available for checkout")
@@ -254,6 +258,7 @@ router.post(
           return;
         }
         total_price += product.price * cartItem.quantity;
+        await product.save();
       }
       total_price = total_price.toFixed(2) * 100;
 
@@ -269,21 +274,6 @@ router.post(
         ordered_at: Date.now(),
       });
       const savedOrder = await newOrder.save();
-      for (let i = 0; i < cartItems.length; i++) {
-        const cartItem = cartItems[i];
-        const product = await Products.findById(cartItem.product_id).session(
-          session
-        );
-        product.quantity = product.quantity - cartItem.quantity;
-        if (product.quantity < 0) {
-          // if product quantity is less than 0 after reducing the cart item quantity
-          next(
-            apiError.interServerError("Product is not available for checkout")
-          );
-          return;
-        }
-        await product.save();
-      }
       const charge = await stripe.charges.create(
         {
           amount: total_price,
