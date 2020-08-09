@@ -107,6 +107,33 @@ router.get(
   }
 );
 
+/**
+ * @param {product_id string}
+ */
+router.post("/remove", authenticateUser, async (req, res, next) => {
+  const body = req.body;
+  try {
+    const deletedFeedback = await Feedbacks.findOneAndDelete({
+      product_id: body.product_id,
+      user_id: body.user_id,
+    });
+    if (!deletedFeedback) {
+      next(
+        apiError.notFound("Cannot found feedback to delete with specified id")
+      );
+      return;
+    }
+    res.status(200).json({
+      message: "Removed successfully",
+      item: deletedFeedback,
+    });
+    return;
+  } catch (error) {
+    next(apiError.interServerError(error.message));
+    return;
+  }
+});
+
 function convertToInt(num) {
   return parseInt(num);
 }
