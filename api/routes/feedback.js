@@ -8,19 +8,46 @@ const apiError = require("../error-handler/apiErrors");
 
 /**
  * @param {product_id string}
+ * @param {last_time timestamp}
+ * @param {limit number}
  */
-router.get("/", authenticateUser, async (req, res, next) => {
+router.get("/all", authenticateUser, async (req, res, next) => {
   const body = req.body;
   try {
-    const feedbacks = await Feedbacks.find({
-      product_id: body.productId,
-    }).limit();
-    if (!feedbacks) {
-      next(apiError.badRequest("Cannot found product with specified id"));
+    body.limit = convertToInt(body.limit);
+    body.last_time = convertToInt(body.last_time);
+    let limit = body.limit || 10; // default
+
+    if (body.limit <= 0 || body.limit > 100) {
+      next(apiError.badRequest("Limit for per page is max 100 min 1"));
       return;
     }
+    // currently returns feedback that are latest
+    let last_time = body.last_time,
+      feedbacks;
+    if (!last_time) {
+      feedbacks = await Feedbacks.find({
+        product_id: body.product_id,
+      })
+        .sort({ created_at: -1 })
+        .limit(limit);
+    } else {
+      feedbacks = await Feedbacks.find({
+        created_at: { $lt: last_time },
+        product_id: body.product_id,
+      })
+        .sort({ created_at: -1 })
+        .limit(limit);
+    }
+    if (feedbacks.length == 0 || !feedbacks) {
+      next(apiError.badRequest("Cannot found feedbacks"));
+      return;
+    }
+    last_time = feedbacks[feedbacks.length - 1].created_at;
     res.status(200).json({
       feedbacks,
+      length: feedbacks.length,
+      last_time,
     });
   } catch (error) {
     next(apiError.interServerError(error.message));
@@ -98,6 +125,7 @@ router.post(
           stars: body.stars,
           feedback: body.feedback ? body.feedback : "",
           user_id: body.user_id,
+          created_at: Date.now(),
         });
       }
 
