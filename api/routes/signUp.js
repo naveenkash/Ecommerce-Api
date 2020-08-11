@@ -7,6 +7,8 @@ const sha256 = require("js-sha256").sha256;
 const formidable = require("formidable");
 const uploadToAWS = require("../helper-methods/uploadToAws");
 const checkFileType = require("../helper-methods/checkFileType.js");
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /**
  * @param {formData}
@@ -56,29 +58,33 @@ router.post("/local", async (req, res, next) => {
         });
 
         const new_user = await user.save();
-        const token = jwt.sign(
-          {
-            user_id: new_user._id,
-            name: new_user.name,
-            lastname: new_user.lastname,
-            email: new_user.email,
-            img: new_user.img,
-            created_at: new_user.created_at,
-            display_name: new_user.display_name,
-          },
-          process.env.JWT_ACCESS_TOKEN_SECERET
-        );
+        const userObj = {
+          user_id: new_user._id,
+          name: new_user.name,
+          lastname: new_user.lastname,
+          email: new_user.email,
+          img: new_user.img,
+          created_at: new_user.created_at,
+          display_name: new_user.display_name,
+        };
+        const token = jwt.sign(userObj, process.env.JWT_ACCESS_TOKEN_SECERET);
+        const msg = {
+          to: new_user.email,
+          from: "welcome-noreply@your-url.com",
+          subject: "Subject of the email",
+          text: "Text of the mail", // text should be plain version of html
+          html: "Email template",
+        };
+        let welcome_mail_sent = true;
+        try {
+          await sgMail.send(msg);
+        } catch (err) {
+          welcome_mail_sent = false;
+        }
         res.status(201).json({
-          user: {
-            user_id: new_user._id,
-            name: new_user.name,
-            lastname: new_user.lastname,
-            email: new_user.email,
-            img: new_user.img,
-            created_at: new_user.created_at,
-            display_name: new_user.display_name,
-          },
+          user: userObj,
           token,
+          welcome_mail_sent,
         });
       } else {
         next(apiError.badRequest("User already exist with that email"));
