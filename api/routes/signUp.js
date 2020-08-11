@@ -73,7 +73,7 @@ router.post("/local", async (req, res, next) => {
           from: "welcome-noreply@your-url.com",
           subject: "Subject of the email",
           text: "Text of the mail", // text should be plain version of html
-          html: "Email template",
+          html: "Email template ex: <strong>Welcome</strong>",
         };
         let welcome_mail_sent = true;
         try {
