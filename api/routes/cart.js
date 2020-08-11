@@ -19,10 +19,13 @@ router.get("/", authenticateUser, async (req, res, next) => {
   const body = req.body;
   try {
     const user = await Users.findById(body.user_id);
-    const cart = await Carts.findById(user.cart_id);
-    if (user.cart_id && !cart.checkout) {
+    if (user.cart_id) {
+      const cart = await Carts.findById(user.cart_id);
       if (cart) {
-        const cartItems = await CartItems.find({ cart_id: cart._id });
+        const cartItems = await CartItems.find({
+          cart_id: cart._id,
+          checkout: false,
+        });
         res.status(200).json({
           cart: cartItems,
         });
@@ -61,6 +64,7 @@ router.post("/add", authenticateUser, async (req, res, next) => {
       const cartItem = await CartItems.findOne({
         cart_id: user.cart_id,
         product_id: body.product_id,
+        checkout: false,
       });
       if (cartItem) {
         next(apiError.badRequest("Item already exist"));
@@ -242,7 +246,10 @@ router.post(
         next(apiError.badRequest("Add items to cart before checkout"));
         return;
       }
-      const cartItems = await CartItems.find({ cart_id: user.cart_id });
+      const cartItems = await CartItems.find({
+        cart_id: user.cart_id,
+        checkout: false,
+      });
       for (let i = 0; i < cartItems.length; i++) {
         const cartItem = cartItems[i];
         const product = await Products.findById(cartItem.product_id).session(
@@ -299,7 +306,7 @@ router.post(
         newOrder.transaction_id = charge.id;
         newOrder.receipt_url = charge.receipt_url;
         newOrder.order_status = 1;
-
+        await newOrder.save();
         await Carts.findByIdAndUpdate(
           user.cart_id,
           {
@@ -312,7 +319,6 @@ router.post(
           { $set: { checkout: true } }
         );
         user.cart_id = ""; // set cart to empty to create new cart after order is complete
-        await newOrder.save();
         await user.save();
         await session.commitTransaction();
         let receipt_mailed = true;
