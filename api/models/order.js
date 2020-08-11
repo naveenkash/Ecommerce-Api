@@ -6,29 +6,48 @@ const orderSchema = mongoose.Schema({
     required: true,
   },
   address: {
+    line1: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    line2: {
+      type: String,
+      trim: true,
+    },
+    landmark: {
+      type: String,
+      trim: true,
+    },
     city: {
       type: String,
+      trim: true,
       required: true,
     },
     state: {
       type: String,
+      trim: true,
       required: true,
     },
     zip: {
       type: Number,
+      trim: true,
       required: true,
     },
     country: {
       type: String,
+      trim: true,
       required: true,
     },
     street: {
       type: String,
+      trim: true,
       required: true,
     },
   },
   tel: {
     type: String,
+    trim: true,
     required: true,
   },
   cart_id: {
@@ -39,7 +58,10 @@ const orderSchema = mongoose.Schema({
     type: Number,
     required: true,
   },
-  transaction_id: { type: String, required: true },
+  transaction_id: {
+    type: String,
+    required: true,
+  },
   receipt_url: {
     type: String,
     required: false,
@@ -49,6 +71,10 @@ const orderSchema = mongoose.Schema({
     required: true,
   },
   ordered_at: {
+    type: Number,
+    required: true,
+  },
+  order_status: {
     type: Number,
     required: true,
   },
@@ -63,3 +89,10 @@ module.exports = mongoose.model("Order", orderSchema);
 // 4 = refund_started
 // 5 = refunded
 // 6 = refund failed
+
+// order_status codes
+// 1 = received
+// 2 = delivered
+// 3 = rejected
+// 4 = dispatched
+// 5 = created

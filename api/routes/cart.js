@@ -9,6 +9,8 @@ const apiError = require("../error-handler/apiErrors");
 const authenticateUser = require("../middlewares/authenticateUser");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const randomId = require("../helper-methods/randomId");
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /**
  * @param {user_id string}
@@ -274,6 +276,7 @@ router.post(
         payment_status: 2,
         total_price, // price in lowest currency value
         ordered_at: Date.now(),
+        order_status: 5,
       });
       const savedOrder = await newOrder.save();
       const charge = await stripe.charges.create(
@@ -295,6 +298,8 @@ router.post(
         newOrder.payment_status = 1;
         newOrder.transaction_id = charge.id;
         newOrder.receipt_url = charge.receipt_url;
+        newOrder.order_status = 1;
+
         await Carts.findByIdAndUpdate(
           user.cart_id,
           {
@@ -306,12 +311,26 @@ router.post(
           { cart_id: user.cart_id, checkout: false },
           { $set: { checkout: true } }
         );
-        user.cart_id = null; // set cart to null to create new cart after order is complete
+        user.cart_id = ""; // set cart to empty to create new cart after order is complete
         await newOrder.save();
         await user.save();
         await session.commitTransaction();
+        let receipt_mailed = true;
+        try {
+          const msg = {
+            to: user.email,
+            from: "order-noreply@your-url.com",
+            subject: "Subject of the email",
+            text: "Text of the mail", // text should be plain version of html
+            html: "Email template ex: <strong>Order Created</strong>",
+          };
+          await sgMail.send(msg);
+        } catch (error) {
+          receipt_mailed = false;
+        }
         res.status(200).json({
           order: newOrder,
+          receipt_mailed,
         });
       } else {
         next(apiError.paymentRequierd("Error occured in charging acc"));
