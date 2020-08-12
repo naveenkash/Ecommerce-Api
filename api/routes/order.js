@@ -6,7 +6,6 @@ router.get("/", authenticateUser, async (req, res) => {
   const body = req.body;
   const orders = await Orders.find({
     user_id: body.user_id,
-    payment_status: 1,
   });
   if (orders.length > 0) {
     res.status(200).json({
