@@ -21,7 +21,7 @@ router.get("/", authenticateUser, async (req, res, next) => {
     const user = await Users.findById(body.user_id);
     if (user.cart_id) {
       const cart = await Carts.findById(user.cart_id);
-      if (cart) {
+      if (cart && !cart.checkout) {
         const cartItems = await CartItems.find({
           cart_id: cart._id,
           checkout: false,
@@ -30,7 +30,9 @@ router.get("/", authenticateUser, async (req, res, next) => {
           cart: cartItems,
         });
       } else {
-        next(apiError.notFound("Not Found"));
+        res.status(200).json({
+          cart: [],
+        });
         return;
       }
     } else {
@@ -90,7 +92,7 @@ router.post("/add", authenticateUser, async (req, res, next) => {
       } else {
         next(
           apiError.badRequest(
-            "Product id not correct or product is nto available"
+            "Product id not correct or product is not available"
           )
         );
         return;
@@ -129,7 +131,7 @@ router.post("/add", authenticateUser, async (req, res, next) => {
       } else {
         next(
           apiError.badRequest(
-            "Product id not correct or product is nto available"
+            "Product id not correct or product is not available"
           )
         );
         return;
@@ -237,56 +239,74 @@ router.post(
   checkIfStripeTokenIsCreated,
   async (req, res, next) => {
     const body = req.body;
-    let total_price = 0;
     const session = await mongoose.startSession();
-    session.startTransaction();
+    const session2 = await mongoose.startSession();
+    const user = await Users.findById(body.user_id);
+    const cartItems = await CartItems.find({
+      cart_id: user.cart_id,
+      checkout: false,
+    });
+    let total_price = 0,
+      cart_id = "",
+      savedOrder = null;
     try {
-      const user = await Users.findById(body.user_id).session(session);
+      // start first transaction
+      session.startTransaction();
       if (!user.cart_id) {
         next(apiError.badRequest("Add items to cart before checkout"));
         return;
       }
-      const cartItems = await CartItems.find({
-        cart_id: user.cart_id,
-        checkout: false,
-      });
+      cart_id = user.cart_id;
+      user.cart_id = ""; // set cart to empty to create new cart after order is complete
+      await user.save();
+
+      let cartItemsArray = [];
       for (let i = 0; i < cartItems.length; i++) {
-        const cartItem = cartItems[i];
-        const product = await Products.findById(cartItem.product_id).session(
-          session
-        );
-        product.quantity = product.quantity - cartItem.quantity;
-        if (product.quantity < 0) {
+        cartItemsArray.push(cartItems[i].product_id);
+      }
+      const products = await Products.find({
+        _id: { $in: cartItemsArray },
+      });
+
+      products.forEach(async (product, index) => {
+        let cartItem = cartItems[index];
+        let quantity = 0;
+        quantity = product.quantity - cartItem.quantity;
+        if (quantity < 0) {
           // if product quantity is less than 0 after reducing the cart item quantity
           next(
             apiError.interServerError("Product is not available for checkout")
           );
           return;
         }
-        if (cartItem.quantity > 5) {
-          // only 5 items of product is allowed per checkout
-          next(apiError.badRequest("Quantity limit per order exceed"));
-          return;
-        }
         total_price += product.price * cartItem.quantity;
-        await product.save();
-      }
-      total_price = total_price.toFixed(2) * 100;
+      });
+      total_price = Math.round(total_price.toFixed(2) * 100);
 
       const newOrder = await Orders({
         _id: mongoose.Types.ObjectId(),
         user_id: body.user_id,
         address: body.address,
         tel: body.tel,
-        cart_id: user.cart_id,
+        cart_id: cart_id,
         transaction_id: "null",
         payment_status: 2,
         total_price, // price in lowest currency value
         ordered_at: Date.now(),
         order_status: 5,
       });
-      const savedOrder = await newOrder.save();
-      const charge = await stripe.charges.create(
+      savedOrder = await newOrder.save({ session });
+      await session.commitTransaction();
+    } catch (err) {
+      await session.abortTransaction();
+      next(apiError.interServerError(err.message));
+      return;
+    } finally {
+      session.endSession();
+    }
+    let charge = null;
+    try {
+      charge = await stripe.charges.create(
         {
           amount: total_price,
           currency: "inr",
@@ -300,27 +320,54 @@ router.post(
           idempotencyKey: randomId(),
         }
       );
+    } catch (error) {
+      next(apiError.badRequest(error.message));
+      return;
+    }
+    try {
+      if (charge.paid) {
+        // start second seperate transaction
+        session2.startTransaction();
+        let cartItemsArray = [];
+        for (let i = 0; i < cartItems.length; i++) {
+          cartItemsArray.push(cartItems[i].product_id);
+        }
+        const products = await Products.find({
+          _id: { $in: cartItemsArray },
+        });
 
-      if (charge) {
-        newOrder.payment_status = 1;
-        newOrder.transaction_id = charge.id;
-        newOrder.receipt_url = charge.receipt_url;
-        newOrder.order_status = 1;
-        await newOrder.save();
-        await Carts.findByIdAndUpdate(
-          user.cart_id,
+        products.forEach(async (product, index) => {
+          let cartItem = cartItems[index];
+          await Products.findByIdAndUpdate(product._id, {
+            $inc: {
+              quantity: -cartItem.quantity,
+            },
+          }).session(session2);
+        });
+
+        savedOrder = await Orders.findByIdAndUpdate(
+          savedOrder._id,
           {
-            $set: { checkout: true },
+            $set: {
+              payment_status: 1,
+              transaction_id: charge.id,
+              receipt_url: charge.receipt_url,
+              order_status: 1,
+            },
           },
-          { useFindAndModify: false }
-        );
+          { new: true }
+        ).session(session2);
+
+        await Carts.findByIdAndUpdate(cart_id, {
+          $set: { checkout: true },
+        }).session(session2);
+
         await CartItems.updateMany(
-          { cart_id: user.cart_id, checkout: false },
+          { cart_id, checkout: false },
           { $set: { checkout: true } }
-        );
-        user.cart_id = ""; // set cart to empty to create new cart after order is complete
-        await user.save();
-        await session.commitTransaction();
+        ).session(session2);
+
+        await session2.commitTransaction();
         let receipt_mailed = true;
         try {
           const msg = {
@@ -335,7 +382,7 @@ router.post(
           receipt_mailed = false;
         }
         res.status(200).json({
-          order: newOrder,
+          order: savedOrder,
           receipt_mailed,
         });
       } else {
@@ -343,10 +390,11 @@ router.post(
         return;
       }
     } catch (err) {
-      await session.abortTransaction();
+      await session2.abortTransaction();
       next(apiError.interServerError(err.message));
+      return;
     } finally {
-      session.endSession();
+      session2.endSession();
     }
   }
 );

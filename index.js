@@ -20,6 +20,7 @@ mongoose.connect(
     console.log("connected to db");
   }
 );
+mongoose.set('useFindAndModify', false);
 app.all("*", (req, res, next) => {
   // CORS headers
   //use * to allow all or can set http://localhost:3000 for testing
