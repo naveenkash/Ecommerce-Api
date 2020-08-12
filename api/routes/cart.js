@@ -177,16 +177,16 @@ router.post("/remove", authenticateUser, async (req, res, next) => {
  */
 router.post("/update", authenticateUser, async (req, res, next) => {
   const body = req.body;
+  if (!body.quantity) {
+    next(apiError.badRequest("Quantity not present"));
+    return;
+  }
   if (
-    body.quantity < 1 ||
-    body.quantity > 4 ||
+    body.quantity < -1 ||
+    body.quantity > 1 ||
     typeof body.quantity !== "number"
   ) {
-    next(
-      apiError.badRequest(
-        "Atleast 1 quantity is needed max 4 to update or quantity must be a number"
-      )
-    );
+    next(apiError.badRequest("Quantity must 1 or -1 and must be a number"));
     return;
   }
   try {
@@ -195,23 +195,9 @@ router.post("/update", authenticateUser, async (req, res, next) => {
       cart_id: user.cart_id,
       product_id: body.product_id,
     });
-    if (
-      body.add &&
-      typeof body.add == "boolean" &&
-      cart_item.quantity + body.quantity <= 5
-    ) {
+    let q = cart_item.quantity;
+    if (q + body.quantity <= 5 && q + body.quantity >= 1) {
       cart_item.quantity += body.quantity;
-      await cart_item.save();
-      res.status(200).json({
-        cart_item,
-      });
-      return;
-    } else if (
-      body.remove &&
-      typeof body.remove == "boolean" &&
-      cart_item.quantity - body.quantity >= 1
-    ) {
-      cart_item.quantity -= body.quantity;
       await cart_item.save();
       res.status(200).json({
         cart_item,
