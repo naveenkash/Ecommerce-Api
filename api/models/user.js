@@ -26,8 +26,13 @@ const userSchema = mongoose.Schema({
     required: false,
   },
   img: {
-    type: String,
-    required: true,
+    type: Object,
+    url: {
+      type: String,
+    },
+    key: {
+      type: String,
+    },
   },
   created_at: {
     type: Number,

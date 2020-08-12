@@ -10,6 +10,7 @@ const orderRoutes = require("./api/routes/order");
 const cartRoutes = require("./api/routes/cart");
 const signUpRoutes = require("./api/routes/signUp");
 const loginRoutes = require("./api/routes/login");
+const userRoutes = require("./api/routes/user");
 const apiErrorHandler = require("./api/error-handler/apiErrorHandler");
 const apiError = require("./api/error-handler/apiErrors");
 
@@ -20,7 +21,7 @@ mongoose.connect(
     console.log("connected to db");
   }
 );
-mongoose.set('useFindAndModify', false);
+mongoose.set("useFindAndModify", false);
 app.all("*", (req, res, next) => {
   // CORS headers
   //use * to allow all or can set http://localhost:3000 for testing
@@ -43,6 +44,7 @@ app.use("/order", orderRoutes);
 app.use("/cart", cartRoutes);
 app.use("/auth/account/signup", signUpRoutes);
 app.use("/auth/account/login", loginRoutes);
+app.use("/user", userRoutes);
 
 app.use((req, res, next) => {
   next(apiError.notFound("Route not Found"));

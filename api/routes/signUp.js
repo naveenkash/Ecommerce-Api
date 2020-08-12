@@ -7,6 +7,8 @@ const sha256 = require("js-sha256").sha256;
 const formidable = require("formidable");
 const uploadToAWS = require("../helper-methods/uploadToAws");
 const checkFileType = require("../helper-methods/checkFileType.js");
+const validateEmail = require("../helper-methods/validateEmail");
+const validatePassword = require("../helper-methods/validatePassword");
 const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -42,10 +44,15 @@ router.post("/local", async (req, res, next) => {
       }
       const userFound = await User.findOne({ email: fields.email }); // query to check if user with email already exist
       if (!userFound) {
-        let img;
+        let img, imgObj;
         if (files.file) {
           img = await uploadToAWS("user-images", files.file);
+          imgObj = {
+            url: img.Location,
+            key: img.Key,
+          };
         }
+
         const user = new User({
           _id: mongoose.Types.ObjectId(),
           name: fields.name,
@@ -53,7 +60,7 @@ router.post("/local", async (req, res, next) => {
           display_name: `${fields.name} ${fields.lastname}`,
           email: fields.email,
           password: sha256(fields.password.trim()),
-          img: img != null ? img.Location : process.env.DEFAULT_IMG,
+          img: img != null ? imgObj : {},
           created_at: Date.now(),
         });
 
@@ -96,18 +103,5 @@ router.post("/local", async (req, res, next) => {
     }
   });
 });
-
-function validateEmail(email) {
-  const emailRegEx = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return emailRegEx.test(email);
-}
-function validatePassword(password) {
-  var passwordRegEx = /(?=^.{12,}$)(?=.*\d)(?=.*[!@#$%^&*]+)(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
-  return passwordRegEx.test(password);
-  // at least 1 uppercase letter
-  // at least 1 special character
-  // at least 1 number
-  // at least 12 character
-}
 
 module.exports = router;
