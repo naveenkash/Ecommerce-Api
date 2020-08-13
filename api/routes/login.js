@@ -21,20 +21,7 @@ router.get("/local", async (req, res, next) => {
           display_name: user.display_name,
           img: user.img,
         };
-
-        const token = jwt.sign(
-          {
-            user_id: new_user._id,
-            name: new_user.name,
-            lastname: new_user.lastname,
-            email: new_user.email,
-            img: new_user.img,
-            created_at: new_user.created_at,
-            display_name: new_user.display_name,
-          },
-          process.env.JWT_ACCESS_TOKEN_SECERET
-        );
-
+        const token = jwt.sign(userObj, process.env.JWT_ACCESS_TOKEN_SECERET);
         res.status(200).json({
           user: userObj,
           token,
