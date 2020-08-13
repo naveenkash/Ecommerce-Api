@@ -11,7 +11,7 @@ const apiError = require("../error-handler/apiErrors");
  * @param {last_time timestamp}
  * @param {limit number}
  */
-router.get("/all", authenticateUser, async (req, res, next) => {
+router.post("/all", authenticateUser, async (req, res, next) => {
   const body = req.body;
   try {
     body.limit = convertToInt(body.limit);
@@ -148,7 +148,7 @@ router.post(
 /**
  * @param {product_id string}
  */
-router.get(
+router.post(
   "/:productId",
   authenticateUser,
   CheckIfItemBought,

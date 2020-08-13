@@ -4,7 +4,7 @@ const apiError = require("../error-handler/apiErrors");
 const sha256 = require("js-sha256").sha256;
 const jwt = require("jsonwebtoken");
 
-router.get("/local", async (req, res, next) => {
+router.post("/local", async (req, res, next) => {
   const body = req.body;
   const typedPassword = sha256(body.password.trim());
   try {

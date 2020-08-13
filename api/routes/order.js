@@ -2,7 +2,7 @@ const router = require("express").Router();
 const Orders = require("../models/order");
 const authenticateUser = require("../middlewares/authenticateUser");
 
-router.get("/", authenticateUser, async (req, res) => {
+router.post("/", authenticateUser, async (req, res) => {
   const body = req.body;
   const orders = await Orders.find({
     user_id: body.user_id,
