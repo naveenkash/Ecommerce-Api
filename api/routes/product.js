@@ -105,10 +105,9 @@ router.post("/new", authenticateUser, checkIfAdmin, async (req, res, next) => {
         images,
       });
 
-      const newProduct = await product.save();
+      await product.save();
       res.status(201).json({
         message: "Successfull",
-        product: newProduct,
       });
       return;
     });
