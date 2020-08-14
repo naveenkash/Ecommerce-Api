@@ -11,6 +11,7 @@ const validateEmail = require("../helper-methods/validateEmail");
 const validatePassword = require("../helper-methods/validatePassword");
 const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const createJwtToken = require("../helper-methods/createJwtToken");
 
 /**
  * @param {formData}
@@ -74,7 +75,7 @@ router.post("/local", async (req, res, next) => {
           created_at: new_user.created_at,
           display_name: new_user.display_name,
         };
-        const token = jwt.sign(userObj, process.env.JWT_ACCESS_TOKEN_SECERET);
+        const token = createJwtToken(userObj);
         const msg = {
           to: new_user.email,
           from: "welcome-noreply@your-url.com",

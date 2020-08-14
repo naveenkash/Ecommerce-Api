@@ -2,7 +2,7 @@ const router = require("express").Router();
 const Users = require("../models/user");
 const apiError = require("../error-handler/apiErrors");
 const sha256 = require("js-sha256").sha256;
-const jwt = require("jsonwebtoken");
+const createJwtToken = require("../helper-methods/createJwtToken");
 
 router.post("/local", async (req, res, next) => {
   const body = req.body;
@@ -25,7 +25,7 @@ router.post("/local", async (req, res, next) => {
           display_name: user.display_name,
           img: user.img,
         };
-        const token = jwt.sign(userObj, process.env.JWT_ACCESS_TOKEN_SECERET);
+        const token = createJwtToken(userObj);
         res.status(200).json({
           user: userObj,
           token,
