@@ -192,7 +192,6 @@ router.post("/remove", authenticateUser, async (req, res, next) => {
     }
     res.status(200).json({
       message: "Removed successfully",
-      item: deletedFeedback,
     });
     return;
   } catch (error) {
