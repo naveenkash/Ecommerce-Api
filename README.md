@@ -13,22 +13,29 @@ To start with project you need to set some env var first.
 | AWS_SECRET_KEY           | aws secret key                 |
 | SENDGRID_API_KEY         | sendgrid api key to send mails |
 
-
 ## Example
 
 ```js
-fetch("http://localhost:3000/cart/add", {
-    method: "POST",
-    headers: {
+async function addToCart() {
+  try {
+    const res = await fetch("http://localhost:3000/cart/add", {
+      method: "POST",
+      headers: {
         Authorization: "Bearer JWT_token_received_when_signed_up",
         "Content-Type": "application/json",
         Accept: "application/json",
-    },
-})
-.then((response) => response.json())
-.then((data) => {
+      },
+      body: JSON.stringify({
+        product_id: "5f2975006fe70c274078c781",
+      }),
+    });
+    const data = await res.json();
     console.log(data);
-});
+  } catch (error) {
+    console.log(error);
+  }
+}
+addToCart();
 ```
 
 ### SignUp routes
@@ -72,7 +79,7 @@ response_object : {
 
 ### Login routes
 
-##### Login  user
+##### Login user
 
 ```js
 route : '/auth/account/login/local',
