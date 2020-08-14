@@ -2,7 +2,7 @@
 
 To start with project you need to set some env var first.
 
-###.env variables
+### .env variables
 
 | var name                 | value                          |
 | ------------------------ | ------------------------------ |
@@ -14,7 +14,7 @@ To start with project you need to set some env var first.
 | SENDGRID_API_KEY         | sendgrid api key to send mails |
 
 
-##Example
+## Example
 
 ```js
 fetch("http://localhost:3000/cart/add", {
