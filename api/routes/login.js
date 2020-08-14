@@ -6,6 +6,10 @@ const jwt = require("jsonwebtoken");
 
 router.post("/local", async (req, res, next) => {
   const body = req.body;
+  if (!body.email || !body.password) {
+    next(apiError.badRequest("Email or Password required"));
+    return;
+  }
   const typedPassword = sha256(body.password.trim());
   try {
     const user = await Users.findOne({ email: body.email });
