@@ -159,8 +159,7 @@ router.post("/remove", authenticateUser, async (req, res, next) => {
       return;
     }
     res.status(200).json({
-      message: "Removed successfully",
-      item: deletedCartItem,
+      message: "Removed successfully"
     });
     return;
   } catch (error) {
