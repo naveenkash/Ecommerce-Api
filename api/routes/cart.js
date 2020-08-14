@@ -159,7 +159,7 @@ router.post("/remove", authenticateUser, async (req, res, next) => {
       return;
     }
     res.status(200).json({
-      message: "Removed successfully"
+      message: "Removed successfully",
     });
     return;
   } catch (error) {
@@ -199,7 +199,7 @@ router.post("/update", authenticateUser, async (req, res, next) => {
       cart_item.quantity += body.quantity;
       await cart_item.save();
       res.status(200).json({
-        cart_item,
+        message: "Updated successfully",
       });
       return;
     } else {
