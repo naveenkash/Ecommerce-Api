@@ -155,7 +155,7 @@ response_object : {
 route : 'product/search?q=<text>&limit=<number>&last_time=<timestamp>',
 method : GET,
 
-description : `Search for product and returns the newly created product. Return default 10 if no limit is
+description : `Search for product and returns an array sorted desc by created time. Return default 10 if no limit is
  provied max 100 to get second page use the last_time key in response`,
 
 response_object : {
