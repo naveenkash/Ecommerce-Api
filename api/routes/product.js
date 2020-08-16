@@ -103,6 +103,7 @@ router.post("/new", authenticateUser, checkIfAdmin, async (req, res, next) => {
         description: fields.description,
         currency: fields.currency,
         images,
+        created_at: Date.now(),
       });
 
       await product.save();
