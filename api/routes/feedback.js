@@ -149,7 +149,7 @@ router.post(
  * @param {product_id string}
  */
 router.post(
-  "/:productId",
+  "/user/:productId",
   authenticateUser,
   CheckIfItemBought,
   async (req, res, next) => {
