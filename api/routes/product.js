@@ -51,6 +51,51 @@ router.get("/:productId", async (req, res, next) => {
   }
 });
 
+router.get("/search/", async (req, res, next) => {
+  const query = req.query;
+  if (!query.q) {
+    next(apiError.interServerError("Add a query parameter (q) to search"));
+    return;
+  }
+  if (!query.limit) {
+    query.limit = 10;
+  }
+  if (query.limit <= 0 || query.limit > 100) {
+    next(apiError.interServerError("Limit per query is min 1 or max 100"));
+    return;
+  }
+  query.limit = parseInt(query.limit);
+  try {
+    let products;
+    if (!query.last_time) {
+      products = await Products.find({
+        name: { $regex: query.q, $options: "gi" },
+      })
+        .sort({ created_at: -1 })
+        .limit(query.limit);
+    } else {
+      query.last_time = parseInt(query.last_time);
+      products = await Products.find({
+        name: { $regex: query.q, $options: "gi" },
+        created_at: { $lt: query.last_time },
+      })
+        .sort({ created_at: -1 })
+        .limit(query.limit);
+    }
+    let last_time;
+    if (products.length > 0) {
+      last_time = products[products.length - 1].created_at;
+    }
+    res.status(200).json({
+      products,
+      last_time,
+    });
+  } catch (error) {
+    next(apiError.interServerError(error.message));
+    return;
+  }
+});
+
 /**
  * @param {formData}
  * @param {formData name}
