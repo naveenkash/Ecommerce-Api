@@ -31,7 +31,7 @@ router.get("/", async (req, res, next) => {
 /**
  * @param {product_id}
  */
-router.get("/:productId", async (req, res, next) => {
+router.get("/single/:productId", async (req, res, next) => {
   const id = req.params.productId;
   try {
     const product = await Products.findById(id);
