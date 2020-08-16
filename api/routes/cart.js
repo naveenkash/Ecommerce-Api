@@ -4,6 +4,7 @@ const CartItems = require("../models/cartItem");
 const Users = require("../models/user");
 const Products = require("../models/product");
 const Orders = require("../models/order");
+const SoldProducts = require("../models/soldProduct");
 const mongoose = require("mongoose");
 const apiError = require("../error-handler/apiErrors");
 const authenticateUser = require("../middlewares/authenticateUser");
@@ -233,7 +234,8 @@ router.post(
     });
     let total_price = 0,
       cart_id = "",
-      savedOrder = null;
+      savedOrder = null,
+      ordered_at = Date.now();
     try {
       // start first transaction
       session.startTransaction();
@@ -268,7 +270,7 @@ router.post(
       });
       total_price = Math.round(total_price.toFixed(2) * 100);
 
-      const newOrder = await Orders({
+      const newOrder = new Orders({
         _id: mongoose.Types.ObjectId(),
         user_id: body.user_id,
         address: body.address,
@@ -277,7 +279,7 @@ router.post(
         transaction_id: "null",
         payment_status: 2,
         total_price, // price in lowest currency value
-        ordered_at: Date.now(),
+        ordered_at,
         order_status: 5,
       });
       savedOrder = await newOrder.save({ session });
@@ -321,14 +323,23 @@ router.post(
           _id: { $in: cartItemsArray },
         });
 
-        products.forEach(async (product, index) => {
-          let cartItem = cartItems[index];
+        for (let i = 0; i < products.length; i++) {
+          const product = products[i];
+          let cartItem = cartItems[i];
           await Products.findByIdAndUpdate(product._id, {
             $inc: {
               quantity: -cartItem.quantity,
             },
           }).session(session2);
-        });
+
+          const soldProduct = new SoldProducts({
+            _id: mongoose.Types.ObjectId(),
+            product_id: product._id,
+            ordered_at,
+            quantity: cartItem.quantity,
+          });
+          await soldProduct.save({ session: session2 });
+        }
 
         savedOrder = await Orders.findByIdAndUpdate(
           savedOrder._id,

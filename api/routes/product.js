@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Products = require("../models/product");
 const CartItems = require("../models/cartItem");
 const Users = require("../models/user");
+const SoldProducts = require("../models/soldProduct");
 const apiError = require("../error-handler/apiErrors");
 const authenticateUser = require("../middlewares/authenticateUser");
 const formidable = require("formidable");
@@ -25,6 +26,67 @@ router.get("/", async (req, res, next) => {
     }
   } catch (error) {
     next(apiError.interServerError(error.message));
+  }
+});
+
+router.get("/trending", async (req, res, next) => {
+  try {
+    let date = new Date();
+    let year = date.getFullYear();
+    let Month = date.getMonth();
+    let todayDate = date.getDate();
+    let milliseconds_till_today = new Date(
+      `${year}/${Month}/${todayDate}`
+    ).getTime();
+    const time = req.query.time;
+    if (time) {
+      if (Number.isNaN(parseInt(time))) {
+        next(apiError.badRequest("Timestamp is not type number"));
+        return;
+      }
+    }
+    let milliseconds = time || 1000 * 60 * 60 * 24; // specified time or past 24 hrs
+    const productsSoldPastDay = await SoldProducts.find({
+      ordered_at: { $gte: milliseconds_till_today - milliseconds },
+    });
+
+    let productsSoldMap = new Map();
+    if (productsSoldPastDay.length > 0) {
+      for (let i = 0; i < productsSoldPastDay.length; i++) {
+        const product = productsSoldPastDay[i];
+        if (productsSoldMap.has(product.product_id)) {
+          let curValue = productsSoldMap.get(product.product_id);
+          productsSoldMap.set(product.product_id, curValue + product.quantity);
+        } else {
+          productsSoldMap.set(product.product_id, product.quantity);
+        }
+      }
+      let trendingProducts = Array.from(
+        productsSoldMap,
+        ([product_id, product_sold]) => ({
+          product_id,
+          product_sold,
+        })
+      );
+      trendingProducts.sort((a, b) => {
+        return b.product_sold - a.product_sold;
+      });
+
+      let result = Array.from(trendingProducts, (trending_product) => ({
+        id: trending_product.product_id,
+      })).slice(0, 4);
+
+      res.status(200).json({
+        trending_products: result,
+      });
+    } else {
+      res.status(200).json({
+        trending_products: [],
+      });
+    }
+  } catch (error) {
+    next(apiError.interServerError(error.message));
+    return;
   }
 });
 

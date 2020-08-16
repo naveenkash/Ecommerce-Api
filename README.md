@@ -185,6 +185,27 @@ response_object : {
 
 <!-- ============================= -->
 
+##### Get trending products
+
+```js
+route : 'product/trending?time=<timestamp>',
+method : GET,
+
+description : `Returns 4 trending products id's for past 1 day if time is not specified in query.
+if trending products for past 1 week is needed provide 1 week timestamp in time query.
+`,
+
+response_object : {
+    "trending_products":[
+        {
+            "id": string
+        }
+    ]
+}
+```
+
+<!-- ============================= -->
+
 ##### Get a single product
 
 ```js
