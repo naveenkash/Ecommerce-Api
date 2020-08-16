@@ -140,7 +140,43 @@ response_object : {
             ],
             "average_review": number,
             "total_reviews": number,
+            "total_stars": number,
+            "created_at": timestamp
+        }
+    ]
+}
+```
+
+<!-- ============================= -->
+
+##### Search for product
+
+```js
+route : 'product/search?q=<text>&limit=<number>&last_time=<timestamp>',
+method : GET,
+
+description : `Search for product and returns the newly created product. Return default 10 if no limit is
+ provied max 100 to get second page use the last_time key in response`,
+
+response_object : {
+    "products":[
+        {
+            "_id": string,
+            "name": string,
+            "price": string,
+            "quantity": string,
+            "description": string,
+            "currency": string
+            "images":[
+                {
+                    "_id": string,
+                    "location": string
+                }
+            ],
+            "average_review": number,
+            "total_reviews": number,
             "total_stars": number
+            "created_at": timestamp
         }
     ]
 }
@@ -151,7 +187,7 @@ response_object : {
 ##### Get a single product
 
 ```js
-route : 'product/:productId',
+route : 'product/single/:productId',
 method : GET,
 
 description : "Get a single product",
@@ -173,7 +209,8 @@ response_object : {
         ],
         "average_review":number,
         "total_reviews":number,
-        "total_stars":number
+        "total_stars":number,
+        "created_at": timestamp
     }
 }
 ```
@@ -443,7 +480,7 @@ response_object : {
 ##### Get the user feedback on a product if any
 
 ```js
-route : 'product/fedback/:productId',
+route : 'product/fedback/user/:productId',
 method : POST,
 
 description : "Get the user feedback if any on a product",
