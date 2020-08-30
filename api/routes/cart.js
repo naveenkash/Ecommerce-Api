@@ -14,7 +14,7 @@ const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /**
- * @param {user_id string}
+ * @param {string} user_id - user id
  */
 router.post("/", authenticateUser, async (req, res, next) => {
   const body = req.body;
@@ -49,9 +49,9 @@ router.post("/", authenticateUser, async (req, res, next) => {
 });
 
 /**
- * @param {product_id string}
- * @param {user_id string}
- * @param {quantity number} optional default 1
+ * @param {string} product_id - product id
+ * @param {string} user_id - user id
+ * @param {number} [quantity=1]
  */
 router.post("/add", authenticateUser, async (req, res, next) => {
   const body = req.body;
@@ -145,7 +145,7 @@ router.post("/add", authenticateUser, async (req, res, next) => {
 });
 
 /**
- * @param {cart_item_id string}
+ * @param {string} cart_item_id - cart item id to be removed
  */
 router.post("/remove", authenticateUser, async (req, res, next) => {
   const body = req.body;
@@ -170,10 +170,9 @@ router.post("/remove", authenticateUser, async (req, res, next) => {
 });
 
 /**
- * @param {product_id string}
- * @param {quantity number}
- * @param {user_id string}
- * @param {type = add || remove boolean}
+ * @param {string} product_id - product id
+ * @param {number} quantity - quantity to add or remove
+ * @param {string} user_id - user id
  */
 router.post("/update", authenticateUser, async (req, res, next) => {
   const body = req.body;
@@ -215,9 +214,16 @@ router.post("/update", authenticateUser, async (req, res, next) => {
 });
 
 /**
- * @param {stripeToken string}
- * @param {address {city string,state string,zip number,country string,street string} }
- * @param {tel string}
+ * @param {string} stripeToken - stripe token got from filling stripe form
+ * @param {object} address - address to ship the product
+ * @param {string} address.line1
+ * @param {string} address.line2
+ * @param {string} address.city
+ * @param {string} address.state
+ * @param {number} address.zip
+ * @param {string} address.country
+ * @param {string} address.street
+ * @param {string} tel - customer telephone number
  */
 router.post(
   "/checkout",
@@ -395,6 +401,9 @@ router.post(
   }
 );
 
+/**
+ * @param {string} stripeToken - stripe token got from filling stripe form
+ */
 function checkIfStripeTokenIsCreated(req, res, next) {
   const body = req.body;
   if (!body.stripeToken) {

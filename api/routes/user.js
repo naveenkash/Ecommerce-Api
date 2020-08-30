@@ -8,6 +8,13 @@ const validateEmail = require("../helper-methods/validateEmail");
 const uploadToAWS = require("../helper-methods/uploadToAWS");
 const deleteFromAws = require("../helper-methods/deleteFromAws");
 
+/**
+ * type formData
+ * @param {string} name - user name
+ * @param {string} lastname - user lastname
+ * @param {string} email - user email
+ * @param {image} file - user image
+ */
 router.post("/update", authenticateUser, async (req, res, next) => {
   const body = req.body;
   const form = new formidable.IncomingForm({ multiples: false });

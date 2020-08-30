@@ -29,6 +29,9 @@ router.get("/", async (req, res, next) => {
   }
 });
 
+/**
+ * @param {timestamp} [req.query.time=86400000] - amount of time in milliseconds in past to calculate trending products
+ */
 router.get("/trending", async (req, res, next) => {
   try {
     let date = new Date();
@@ -91,7 +94,7 @@ router.get("/trending", async (req, res, next) => {
 });
 
 /**
- * @param {product_id}
+ * @param {string} product_id - product id
  */
 router.get("/single/:productId", async (req, res, next) => {
   const id = req.params.productId;
@@ -113,6 +116,9 @@ router.get("/single/:productId", async (req, res, next) => {
   }
 });
 
+/**
+ * @param {string} req.query.q - query to search for product
+ */
 router.get("/search/", async (req, res, next) => {
   const query = req.query;
   if (!query.q) {
@@ -159,13 +165,13 @@ router.get("/search/", async (req, res, next) => {
 });
 
 /**
- * @param {formData}
- * @param {formData name}
- * @param {formData description}
- * @param {formData price}
- * @param {formData quantity}
- * @param {formData currency}
- * @param {formData files->key file->value}
+ * type formData
+ * @param {string} name - product name
+ * @param {string} description - product description
+ * @param {number} price - product price
+ * @param {number} quantity - product quantity
+ * @param {string} currency - product currency code
+ * @param {images} files - images for product
  */
 router.post("/new", authenticateUser, checkIfAdmin, async (req, res, next) => {
   const form = new formidable.IncomingForm({ multiples: true });
@@ -226,8 +232,11 @@ router.post("/new", authenticateUser, checkIfAdmin, async (req, res, next) => {
 });
 
 /**
- * @param {update_product object}
- * @param {product_id}
+ * @param {object} update_product - object of fields to update in product
+ * @param {string} update_product.price
+ * @param {string} update_produc.name
+ * @param {string} update_product.description
+ * @param {string} product_id - product id
  */
 router.post(
   "/update",

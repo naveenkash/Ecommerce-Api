@@ -14,12 +14,12 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const createJwtToken = require("../helper-methods/createJwtToken");
 
 /**
- * @param {formData}
- * @param {formData name}
- * @param {formData lastname}
- * @param {formData password}
- * @param {formData email}
- * @param {formData image file->key file->value}
+ * type formData
+ * @param {string} name - user name
+ * @param {string} lastname - user lastname
+ * @param {string} password - user password
+ * @param {string} email - user email
+ * @param {image} file - user image
  */
 router.post("/local", async (req, res, next) => {
   const form = new formidable.IncomingForm({ multiples: false });

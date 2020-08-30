@@ -7,9 +7,9 @@ const authenticateUser = require("../middlewares/authenticateUser");
 const apiError = require("../error-handler/apiErrors");
 
 /**
- * @param {product_id string}
- * @param {last_time timestamp}
- * @param {limit number}
+ * @param {string} product_id - product id
+ * @param {timestamp} [last_time] - timestamp to skip 
+ * @param {number} [limit=10] - number of items to return
  */
 router.post("/all", authenticateUser, async (req, res, next) => {
   const body = req.body;
@@ -56,9 +56,9 @@ router.post("/all", authenticateUser, async (req, res, next) => {
 });
 
 /**
- * @param {stars number}
- * @param {product_id string}
- * @param {feedback string} optional
+ * @param {number} stars - amount of star on a product user gave 1-5
+ * @param {string} product_id - product id
+ * @param {string} [feedback=''] - written feedback of user on a product
  */
 router.post(
   "/create",
@@ -146,7 +146,7 @@ router.post(
 );
 
 /**
- * @param {product_id string}
+ * @param {string} product_id - product id
  */
 router.post(
   "/user/:productId",
@@ -175,7 +175,7 @@ router.post(
 );
 
 /**
- * @param {product_id string}
+ * @param {string} product_id - product id
  */
 router.post("/remove", authenticateUser, async (req, res, next) => {
   const body = req.body;

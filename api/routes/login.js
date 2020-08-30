@@ -4,6 +4,10 @@ const apiError = require("../error-handler/apiErrors");
 const sha256 = require("js-sha256").sha256;
 const createJwtToken = require("../helper-methods/createJwtToken");
 
+/**
+ * @param {string} email - user email
+ * @param {string} password - user password
+ */
 router.post("/local", async (req, res, next) => {
   const body = req.body;
   if (!body.email || !body.password) {
