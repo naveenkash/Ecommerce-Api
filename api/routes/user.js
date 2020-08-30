@@ -5,7 +5,7 @@ const authenticateUser = require("../middlewares/authenticateUser");
 const formidable = require("formidable");
 const checkFileType = require("../helper-methods/checkFileType.js");
 const validateEmail = require("../helper-methods/validateEmail");
-const uploadToAWS = require("../helper-methods/uploadToAWS");
+const uploadToAWS = require("../helper-methods/uploadToAws");
 const deleteFromAws = require("../helper-methods/deleteFromAws");
 
 /**
