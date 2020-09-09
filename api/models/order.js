@@ -29,7 +29,7 @@ const orderSchema = mongoose.Schema({
       trim: true,
       required: true,
     },
-    zip: {
+    postal_code: {
       type: Number,
       trim: true,
       required: true,
@@ -39,13 +39,8 @@ const orderSchema = mongoose.Schema({
       trim: true,
       required: true,
     },
-    street: {
-      type: String,
-      trim: true,
-      required: true,
-    },
   },
-  tel: {
+  phone: {
     type: String,
     trim: true,
     required: true,

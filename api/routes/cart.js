@@ -216,14 +216,13 @@ router.post("/update", authenticateUser, async (req, res, next) => {
 /**
  * @param {string} stripeToken - stripe token got from filling stripe form
  * @param {object} address - address to ship the product
- * @param {string} address.line1
- * @param {string} address.line2
- * @param {string} address.city
- * @param {string} address.state
- * @param {number} address.zip
- * @param {string} address.country
- * @param {string} address.street
- * @param {string} tel - customer telephone number
+ * @param {string} address.line1 - Address line 1 (e.g., street, PO Box, or company name).
+ * @param {string} address.line2 - Address line 2 (e.g., apartment, suite, unit, or building).
+ * @param {string} address.city - City, district, suburb, town, or village.
+ * @param {string} address.state - State, county, province, or region.
+ * @param {number} address.postal_code - ZIP or postal code.
+ * @param {string} address.country - Two-letter country code (ISO 3166-1 alpha-2).
+ * @param {string} phone - Recipient phone (including extension).
  */
 router.post(
   "/checkout",
@@ -280,7 +279,7 @@ router.post(
         _id: mongoose.Types.ObjectId(),
         user_id: body.user_id,
         address: body.address,
-        tel: body.tel,
+        phone: body.phone,
         cart_id: cart_id,
         transaction_id: "null",
         payment_status: 2,
