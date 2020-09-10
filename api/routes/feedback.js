@@ -56,7 +56,7 @@ router.post("/all", authenticateUser, async (req, res, next) => {
 router.post(
   "/create",
   authenticateUser,
-  CheckIfItemBought,
+  checkIfItemBought,
   async (req, res, next) => {
     const body = req.body;
     body.stars = convertToInt(body.stars);
@@ -145,7 +145,7 @@ router.post(
 router.post(
   "/user/:productId",
   authenticateUser,
-  CheckIfItemBought,
+  checkIfItemBought,
   async (req, res, next) => {
     const productId = req.params.productId;
     const body = req.body;
@@ -213,7 +213,7 @@ function convertToInt(num) {
   return parseInt(num);
 }
 
-async function CheckIfItemBought(req, res, next) {
+async function checkIfItemBought(req, res, next) {
   const body = req.body;
   const itemBought = await CartItems.findOne({
     user_id: body.user_id,
