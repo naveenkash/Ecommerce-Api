@@ -91,3 +91,4 @@ module.exports = mongoose.model("Order", orderSchema);
 // 3 = rejected
 // 4 = dispatched
 // 5 = created
+// 6 = canceled
