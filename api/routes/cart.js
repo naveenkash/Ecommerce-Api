@@ -240,7 +240,8 @@ router.post(
     let total_price = 0,
       cart_id = "",
       savedOrder = null,
-      ordered_at = Date.now();
+      ordered_at = Date.now(),
+      products = [];
     try {
       // start first transaction
       session.startTransaction();
@@ -256,7 +257,7 @@ router.post(
       for (let i = 0; i < cartItems.length; i++) {
         cartItemsArray.push(cartItems[i].product_id);
       }
-      const products = await Products.find({
+      products = await Products.find({
         _id: { $in: cartItemsArray },
       });
 
@@ -320,14 +321,6 @@ router.post(
       if (charge.paid) {
         // start second seperate transaction
         session2.startTransaction();
-        let cartItemsArray = [];
-        for (let i = 0; i < cartItems.length; i++) {
-          cartItemsArray.push(cartItems[i].product_id);
-        }
-        const products = await Products.find({
-          _id: { $in: cartItemsArray },
-        });
-
         for (let i = 0; i < products.length; i++) {
           const product = products[i];
           let cartItem = cartItems[i];
