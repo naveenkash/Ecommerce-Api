@@ -173,24 +173,39 @@ router.post(
  */
 router.post("/remove", authenticateUser, async (req, res, next) => {
   const body = req.body;
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
+    const product = await Products.findById(body.product_id);
     const deletedFeedback = await Feedbacks.findOneAndDelete({
       product_id: body.product_id,
       user_id: body.user_id,
-    });
+    }).session(session);
+    product.average_review =
+      ((product.total_stars - deletedFeedback.stars) /
+        ((product.total_reviews - 1) * 5)) *
+        5 || 0;
+    product.average_review.toFixed(1);
+    product.total_stars -= deletedFeedback.stars;
+    product.total_reviews -= 1;
     if (!deletedFeedback) {
       next(
         apiError.notFound("Cannot found feedback to delete with specified id")
       );
       return;
     }
+    await product.save({ session });
+    await session.commitTransaction();
     res.status(200).json({
       message: "Removed successfully",
     });
     return;
   } catch (error) {
+    await session.abortTransaction();
     next(apiError.interServerError(error.message));
     return;
+  } finally {
+    session.endSession();
   }
 });
 
