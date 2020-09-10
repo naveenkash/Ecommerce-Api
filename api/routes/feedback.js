@@ -8,7 +8,7 @@ const apiError = require("../error-handler/apiErrors");
 
 /**
  * @param {string} product_id - product id
- * @param {timestamp} [last_time] - timestamp to skip 
+ * @param {timestamp} [last_time] - timestamp to skip
  * @param {number} [limit=10] - number of items to return
  */
 router.post("/all", authenticateUser, async (req, res, next) => {
@@ -25,20 +25,13 @@ router.post("/all", authenticateUser, async (req, res, next) => {
     // currently returns feedback that are latest
     let last_time = body.last_time,
       feedbacks;
-    if (!last_time) {
-      feedbacks = await Feedbacks.find({
-        product_id: body.product_id,
-      })
-        .sort({ created_at: -1 })
-        .limit(limit);
-    } else {
-      feedbacks = await Feedbacks.find({
-        created_at: { $lt: last_time },
-        product_id: body.product_id,
-      })
-        .sort({ created_at: -1 })
-        .limit(limit);
+    let feddbackFindArgumentObj = { product_id: body.product_id };
+    if (last_time) {
+      feddbackFindArgumentObj.created_at = { $lt: last_time };
     }
+    feedbacks = await Feedbacks.find(feddbackFindArgumentObj)
+      .sort({ created_at: -1 })
+      .limit(limit);
     if (feedbacks.length == 0 || !feedbacks) {
       next(apiError.badRequest("Cannot found feedbacks"));
       return;
@@ -67,20 +60,19 @@ router.post(
   async (req, res, next) => {
     const body = req.body;
     body.stars = convertToInt(body.stars);
-
+    const session = await mongoose.startSession();
     if (body.stars && (body.stars > 5 || body.stars < 1)) {
       next(apiError.badRequest("Stars atleast must be 1 or max 5"));
       return;
     }
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
     try {
-      const product = await Products.findById(body.product_id).session(session);
+      session.startTransaction();
+      const product = await Products.findById(body.product_id);
       let feedback = await Feedbacks.findOne({
         product_id: body.product_id,
         user_id: body.user_id,
-      }).session(session);
+      });
 
       if (!product) {
         next(apiError.badRequest("Cannot found product with specified id"));
@@ -106,11 +98,13 @@ router.post(
         feedback.stars = body.stars ? body.stars : feedback.stars;
       }
 
-      feedback.feedback = body.feedback
-        ? body.feedback
-        : feedback.feedback
-        ? feedback.feedback
-        : "";
+      if (feedback) {
+        feedback.feedback = body.feedback
+          ? body.feedback
+          : feedback.feedback
+          ? feedback.feedback
+          : "";
+      }
 
       product.total_reviews += feedback ? 0 : 1;
       product.average_review = (
@@ -129,8 +123,8 @@ router.post(
         });
       }
 
-      await product.save();
-      await feedback.save();
+      await product.save({ session });
+      await feedback.save({ session });
       await session.commitTransaction();
       res.status(200).json({
         message: "Done!",
