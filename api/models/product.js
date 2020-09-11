@@ -24,7 +24,11 @@ const productSchema = mongoose.Schema({
   },
   images: [
     {
-      location: {
+      url: {
+        type: String,
+        required: true,
+      },
+      key: {
         type: String,
         required: true,
       },

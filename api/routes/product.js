@@ -8,6 +8,7 @@ const apiError = require("../error-handler/apiErrors");
 const authenticateUser = require("../middlewares/authenticateUser");
 const formidable = require("formidable");
 const uploadToAWS = require("../helper-methods/uploadToAws.js");
+const deleteFromAws = require("../helper-methods/deleteFromAws.js");
 const getTodayDate = require("../helper-methods/getTodayDate.js");
 const checkFileType = require("../helper-methods/checkFileType.js");
 
@@ -195,18 +196,7 @@ router.post("/new", authenticateUser, checkIfAdmin, async (req, res, next) => {
         return;
       }
 
-      if (!Array.isArray(files.files)) {
-        let folderName = `product-images/${getTodayDate()}`;
-        const res = await uploadToAWS(folderName, files.files);
-        images.push({ location: res.Location });
-      } else {
-        for (let i = 0; i < files.files.length; i++) {
-          const file = files.files[i];
-          let folderName = `product-images/${getTodayDate()}`;
-          const res = await uploadToAWS(folderName, file);
-          images.push({ location: res.Location });
-        }
-      }
+      images = await uploadFilesToAws(files);
 
       const product = new Products({
         _id: mongoose.Types.ObjectId(),
@@ -232,56 +222,179 @@ router.post("/new", authenticateUser, checkIfAdmin, async (req, res, next) => {
 });
 
 /**
- * @param {object} update_product - object of fields to update in product
- * @param {string} update_product.price
- * @param {string} update_produc.name
- * @param {string} update_product.description
+ * type formData
  * @param {string} product_id - product id
+ * @param {string} name - product name
+ * @param {string} description - product description
+ * @param {number} price - product price
+ * @param {number} quantity - product quantity
+ * @param {images} files - images for product to add
+ * @param {string[]} img_keys - aws image keys to remove from aws
  */
 router.post(
   "/update",
   authenticateUser,
   checkIfAdmin,
   async (req, res, next) => {
-    const body = req.body;
-    const id = body.product_id;
-    const update_product = body.update_product;
-    try {
-      if (
-        !(Object.keys(update_product).length === 0) &&
-        update_product.constructor === Object
-      ) {
-        const updated_product = await Products.findByIdAndUpdate(
-          id,
-          update_product,
-          {
-            new: true,
-            useFindAndModify: false,
-          }
-        );
-        await CartItems.updateMany(
-          { product_id: id, checkout: false },
-          {
-            $set: {
-              price: update_product.price || updated_product.price,
-              name: update_product.name || updated_product.name,
-              description:
-                update_product.description || updated_product.description,
-            },
-          }
-        );
-        res.status(200).json({ message: "updated!" });
-      } else {
-        res.status(400).json({
-          message: "Nothing to update",
-        });
+    const form = new formidable.IncomingForm({ multiples: true });
+    form.parse(req, async (error, fields, files) => {
+      if (error) {
+        next(apiError.interServerError(error.message));
+        return;
       }
-    } catch (error) {
-      next(apiError.interServerError(error.message));
-      return;
-    }
+
+      if (fields.name && fields.name.length <= 0) {
+        next(apiError.interServerError(`Name cannot be empty`));
+        return;
+      } else if (fields.description && fields.description.length <= 0) {
+        next(apiError.interServerError(`Description cannot be empty`));
+        return;
+      } else if (fields.quantity && fields.quantity <= 0) {
+        next(apiError.interServerError(`Quantity cannot be ${quantity}`));
+        return;
+      } else if (fields.price && fields.price <= 0) {
+        next(apiError.interServerError(`Price cannot be ${price}`));
+        return;
+      }
+
+      let product = null,
+        images = [],
+        imgKeysIsPresent = false,
+        updated = false,
+        id = fields.product_id,
+        imagesToAddLength = 0,
+        currentPresentImagesLength,
+        filesIsPresent = files.files && files.files.length > 0,
+        imgKeys = fields.img_keys ? JSON.parse(fields.img_keys) : [];
+      imgKeysIsPresent = imgKeys && imgKeys.length > 0;
+
+      // get the current product
+      try {
+        product = await Products.findById(id);
+        currentPresentImagesLength = product.images.length;
+      } catch (error) {
+        next(apiError.interServerError(error.message));
+        return;
+      }
+
+      // upload new files to aws if present
+      try {
+        if (filesIsPresent) {
+          imagesToAddLength = files.files.length;
+          if (!checkFileType.areFilesValid(files.files)) {
+            next(apiError.badRequest("Files not Valid"));
+            return;
+          }
+        }
+        if (currentPresentImagesLength + imagesToAddLength > 10) {
+          next(apiError.badRequest("Only 10 images allowed per product"));
+          return;
+        }
+        let totalImages = currentPresentImagesLength + imagesToAddLength;
+        if (imgKeysIsPresent && imgKeys.length >= totalImages) {
+          next(apiError.interServerError("Cannot remove all images"));
+          return;
+        }
+        if (filesIsPresent) {
+          images = await uploadFilesToAws(files);
+        }
+      } catch (error) {
+        next(apiError.interServerError(error.message));
+        return;
+      }
+
+      // update the product
+      try {
+        const session = await mongoose.startSession();
+        try {
+          session.startTransaction();
+          product.name = fields.name || product.name;
+          product.price = fields.price || product.price;
+          product.description = fields.description || product.description;
+          product.quantity = fields.quantity || product.quantity;
+
+          if (filesIsPresent) {
+            product.images = [...product.images, ...images];
+          }
+          if (imgKeysIsPresent) {
+            product.images = product.images.filter((img) => {
+              return !imgKeys.includes(img.key);
+            });
+          }
+          const updatedProduct = await product.save({ session });
+          await CartItems.updateMany(
+            { product_id: id, checkout: false },
+            {
+              $set: {
+                price: fields.price || updatedProduct.price,
+                name: fields.name || updatedProduct.name,
+                description: fields.description || updatedProduct.description,
+                quantity: fields.quantity || updatedProduct.quantity,
+              },
+            }
+          ).session(session);
+          await session.commitTransaction();
+          updated = true;
+        } catch (error) {
+          await session.abortTransaction();
+          next(apiError.interServerError(error.message));
+          return;
+        } finally {
+          session.endSession();
+        }
+      } catch (error) {
+        next(apiError.interServerError(error.message));
+        return;
+      }
+
+      // Delete the images from aws
+      try {
+        if (imgKeysIsPresent) {
+          await deleteFilesFromAws(imgKeys);
+        }
+        if (updated) {
+          res.status(200).json({ message: "updated!" });
+          return;
+        }
+      } catch (error) {
+        next(apiError.interServerError(error.message));
+        return;
+      }
+    });
   }
 );
+
+async function deleteFilesFromAws(imgkeys) {
+  try {
+    for (let i = 0; i < imgkeys.length; i++) {
+      const key = imgkeys[i];
+      await deleteFromAws(key);
+    }
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function uploadFilesToAws(files) {
+  let images = [];
+  try {
+    if (!Array.isArray(files.files)) {
+      let folderName = `product-images/${getTodayDate()}`;
+      const res = await uploadToAWS(folderName, files.files);
+      images.push({ url: res.Location, key: res.Key });
+    } else {
+      for (let i = 0; i < files.files.length; i++) {
+        const file = files.files[i];
+        let folderName = `product-images/${getTodayDate()}`;
+        const res = await uploadToAWS(folderName, file);
+        images.push({ url: res.Location, key: res.Key });
+      }
+    }
+    return images;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
 
 async function checkIfAdmin(req, res, next) {
   const body = req.body;
