@@ -27,6 +27,9 @@ router.post("/", authenticateUser, async (req, res) => {
   }
 });
 
+/**
+ * @param {string} order_id - order id
+ */
 router.post("/cancel", authenticateUser, async (req, res, next) => {
   const body = req.body;
   const session = await mongoose.startSession();
