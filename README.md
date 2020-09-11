@@ -407,11 +407,10 @@ body:{
     address:{
         city: string,
         state: string,
-        zip: number,
+        postal_code: number,
         country: string,
-        street: string,
     },
-    tel: string
+    phone: string
 },
 
 description : "Checkout user and calculate cart price on server and charge user with stripe",
@@ -426,10 +425,9 @@ response_object : {
             "city": string,
             "state": string,
             "country": string,
-            "street": string,
-            "zip": number
+            "postal_code": number
         },
-        "tel": string,
+        "phone": string,
         "cart_id": string,
         "transaction_id": string,
         "payment_status": number,
@@ -586,10 +584,9 @@ response_object : {
                 "city": string,
                 "state": string,
                 "country": string,
-                "street": string,
-                "zip": number
+                "postal_code": number
             },
-            "tel": string,
+            "phone": string,
             "cart_id": string,
             "transaction_id": string,
             "payment_status": number,
@@ -599,5 +596,24 @@ response_object : {
             "receipt_url": string
         }
     ]
+}
+
+```
+
+##### Cancel order
+
+```js
+route : 'order/cancel',
+method : POST,
+body:{
+    fields:{
+        order_id: string,
+    }
+}
+description : "Cancel order",
+
+response_object : {
+    "message": string,
+    "cancellation_email_sent": boolean
 }
 ```
