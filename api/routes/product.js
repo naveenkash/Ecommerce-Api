@@ -329,7 +329,6 @@ router.post(
                 price: fields.price || updatedProduct.price,
                 name: fields.name || updatedProduct.name,
                 description: fields.description || updatedProduct.description,
-                quantity: fields.quantity || updatedProduct.quantity,
               },
             }
           ).session(session);
