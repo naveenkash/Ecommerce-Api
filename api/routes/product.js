@@ -134,23 +134,16 @@ router.get("/search/", async (req, res, next) => {
     return;
   }
   query.limit = parseInt(query.limit);
+  query.last_time = parseInt(query.last_time);
   try {
-    let products;
-    if (!query.last_time) {
-      products = await Products.find({
-        name: { $regex: query.q, $options: "gi" },
-      })
-        .sort({ created_at: -1 })
-        .limit(query.limit);
-    } else {
-      query.last_time = parseInt(query.last_time);
-      products = await Products.find({
-        name: { $regex: query.q, $options: "gi" },
-        created_at: { $lt: query.last_time },
-      })
-        .sort({ created_at: -1 })
-        .limit(query.limit);
+    let products,
+      searchProductArgObj = { name: { $regex: query.q, $options: "gi" } };
+    if (query.last_time) {
+      searchProductArgObj.created_at = { $lt: query.last_time };
     }
+    products = await Products.find(searchProductArgObj)
+      .sort({ created_at: -1 })
+      .limit(query.limit);
     let last_time;
     if (products.length > 0) {
       last_time = products[products.length - 1].created_at;
