@@ -254,7 +254,7 @@ body: {
         quantity: number,
         description: string,
         currency: string, // inr , usd , cad
-        files: image,// multiple images or single image
+        files: image, // multiple images or single image
     }
 },
 
@@ -275,11 +275,17 @@ Authorization required
 route : 'product/update',
 method : POST,
 body: {
-    "product_id":"product_id",
-    "update_product":{
-        name: string,
-        price: number,
-        description: string,
+    type: FormData,
+    fields:{
+        product_id: string,
+        update_product:{
+            "name": string,
+            "price": number,
+            "description": string,
+            "quantity": number,
+            "files": image, // multiple images or single image
+            "img_keys": string[], // keys of product images to delete
+        }
     }
 },
 
