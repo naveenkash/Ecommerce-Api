@@ -561,6 +561,64 @@ response_object : {
 }
 ```
 
+##### Send OTP to reset password
+
+```js
+route : 'user/password/sendresetotp',
+method : POST,
+body:{
+    fields:{
+        email: string,
+    }
+}
+
+description : "Send OTP to user email to verify. OTP is valid for 10 minutes",
+
+response_object : {
+    "message": "OTP sent!"
+}
+```
+
+##### Verify the OTP to reset password
+
+```js
+route : 'user/password/verifyresetotp',
+method : POST,
+body:{
+    fields:{
+        email: string,
+        otp: number,
+    }
+}
+
+description : `Verify the OTP created for resetting password and return a token after
+ it's verified for resetting password`,
+
+response_object : {
+    "token": string
+}
+```
+
+##### Reset the password using token
+
+```js
+route : 'user/password/reset',
+method : POST,
+body:{
+    fields:{
+        token: string,
+        password: string,
+        email: string,
+    }
+}
+
+description : "Reset the password with token received after verifying OTP",
+
+response_object : {
+    "message": "Password updated!"
+}
+```
+
 ### Order routes
 
 Authorization required

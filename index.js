@@ -11,6 +11,7 @@ const cartRoutes = require("./api/routes/cart");
 const signUpRoutes = require("./api/routes/signUp");
 const loginRoutes = require("./api/routes/login");
 const userRoutes = require("./api/routes/user");
+const passwordRoutes = require("./api/routes/password");
 const apiErrorHandler = require("./api/error-handler/apiErrorHandler");
 const apiError = require("./api/error-handler/apiErrors");
 
@@ -45,6 +46,7 @@ app.use("/cart", cartRoutes);
 app.use("/auth/account/signup", signUpRoutes);
 app.use("/auth/account/login", loginRoutes);
 app.use("/user", userRoutes);
+app.use("/user/password", passwordRoutes);
 
 app.use((req, res, next) => {
   next(apiError.notFound("Route not Found"));
