@@ -625,6 +625,26 @@ response_object : {
 }
 ```
 
+##### Change current password
+
+```js
+route : 'user/password/change',
+method : POST,
+body:{
+    fields:{
+        old_password: string,
+        new_password: string,
+        email: string,
+    }
+}
+
+description : "Change current password",
+
+response_object : {
+    "message": "Password changed!"
+}
+```
+
 ### Order routes
 
 Authorization required

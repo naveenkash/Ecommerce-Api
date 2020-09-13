@@ -9,6 +9,7 @@ const sha256 = require("js-sha256").sha256;
 const validatePassword = require("../helper-methods/validatePassword");
 const rateLimit = require("express-rate-limit");
 const MongoStore = require("rate-limit-mongo");
+const authenticateUser = require("../middlewares/authenticateUser");
 
 /**
  * @param {string} email - email to send OTP
@@ -185,6 +186,101 @@ router.post("/reset", async (req, res, next) => {
     return;
   }
 });
+
+// limit verify otp request
+const passwordChangeRequestLimiter = rateLimit({
+  store: new MongoStore({
+    uri: process.env.MONGO_URI,
+    collectionName: "passwordchangerequestlimits",
+    expireTimeMs: generateExpireTimeMs(600000, 86400000), // generate time between 10 minutes - 1 day in milliseconds
+  }),
+  windowMs: 10 * 60 * 6 * 1000, // 60 minutes or 1 hour
+  max: 5,
+  handler: function (req, res, next) {
+    next(
+      apiError.forbidden(
+        `Too many attempts from this ip, Try again after some time`
+      )
+    );
+    return;
+  },
+});
+
+/**
+ * @param {string} old_password - old password
+ * @param {string} new_password - new password
+ * @param {string} email - email of the account password being changed
+ */
+router.post(
+  "/change",
+  passwordChangeRequestLimiter,
+  authenticateUser,
+  async (req, res, next) => {
+    const body = req.body;
+    const { old_password, new_password, email } = body;
+    if (!old_password) {
+      next(apiError.badRequest("Old password is not present"));
+      return;
+    }
+    if (!new_password) {
+      next(apiError.badRequest("New password is not present"));
+      return;
+    } else if (!validatePassword(new_password)) {
+      next(apiError.badRequest("Enter strong password"));
+      return;
+    }
+    if (old_password === new_password) {
+      next(apiError.badRequest("Your new password can't be your old password"));
+      return;
+    }
+    if (!email) {
+      next(apiError.badRequest("email is not present"));
+      return;
+    }
+    try {
+      const oldPassword = sha256(old_password.trim());
+      const user = await Users.findOne({ email });
+      if (!user) {
+        next(
+          apiError.badRequest("Cannot find user with specified email address")
+        );
+        return;
+      }
+      if (user.password !== oldPassword) {
+        try {
+          await sendEmail(
+            email,
+            from, // enter email to sent from
+            subject, // enter subject of the email
+            text, // enter text of the email
+            `There was a attempt in changing your password`
+          );
+        } catch (error) {}
+
+        next(apiError.forbidden("Old password is not correct"));
+        return;
+      }
+      const newPassword = sha256(new_password.trim());
+      user.password = newPassword;
+      await user.save();
+      try {
+        await sendEmail(
+          email,
+          from, // enter email to sent from
+          subject, // enter subject of the email
+          text, // enter text of the email
+          `Your password has been changed successfully`
+        );
+      } catch (error) {}
+      res.status(200).json({
+        message: "Password changed!",
+      });
+    } catch (error) {
+      next(apiError.interServerError(error.message));
+      return;
+    }
+  }
+);
 
 function generateSixDigitOtp() {
   return Math.floor(100000 + Math.random() * 899999);
